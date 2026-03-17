@@ -15,7 +15,9 @@ repositories {
     mavenCentral()
 }
 
-val ktor_version = "3.1.3"
+val ktor_version: String by project
+val logback_version: String by project
+val kotlin_version: String by project
 
 dependencies {
     // Ktor Server
@@ -28,9 +30,9 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.18")
+    implementation("ch.qos.logback:logback-classic:$logback_version")
 
     // Tests
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:2.1.20")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
 }

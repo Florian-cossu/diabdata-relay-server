@@ -1,7 +1,7 @@
 package com.diabdata.relay.registry
 
-import com.diabdata.relay.models.RelaySession
 import com.diabdata.relay.models.SessionClosedMessage
+import com.diabdata.relay.models.RelaySession
 import io.ktor.websocket.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -11,41 +11,43 @@ import java.util.concurrent.ConcurrentHashMap
 object SessionRegistry {
 
     private val sessions = ConcurrentHashMap<String, RelaySession>()
-    private val tokenHashIndex = ConcurrentHashMap<String, String>() // tokenHash → sessionId
+    private val tokenHashIndex = ConcurrentHashMap<String, String>()
+    private val registerMutex = Mutex()
     private val cleanupMutex = Mutex()
 
     private val json = Json { encodeDefaults = true }
 
     // ═══════════════════════════════════════════
-    //  REGISTER — Android app creates a session
+    //  REGISTER — Android app creates session
     // ═══════════════════════════════════════════
 
-    fun register(
+    suspend fun register(
         sessionId: String,
         tokenHash: String,
         mode: String,
         expiresAt: Long,
         appSocket: WebSocketSession
     ): Boolean {
-        // Checks that there isn't already a session with the tokenhash
-        if (tokenHashIndex.containsKey(tokenHash)) return false
+        registerMutex.withLock {
+            if (tokenHashIndex.containsKey(tokenHash)) return false
 
-        val session = RelaySession(
-            sessionId = sessionId,
-            tokenHash = tokenHash,
-            mode = mode,
-            expiresAt = expiresAt,
-            appSocket = appSocket
-        )
+            val session = RelaySession(
+                sessionId = sessionId,
+                tokenHash = tokenHash,
+                mode = mode,
+                expiresAt = expiresAt,
+                appSocket = appSocket
+            )
 
-        sessions[sessionId] = session
-        tokenHashIndex[tokenHash] = sessionId
-        return true
+            sessions[sessionId] = session
+            tokenHashIndex[tokenHash] = sessionId
+            return true
+        }
     }
 
-    // ════════════════════════════════════════════
-    //  UNREGISTER — Android app closes the session
-    // ════════════════════════════════════════════
+    // ═══════════════════════════════════════════
+    //  UNREGISTER — Android app closes session
+    // ═══════════════════════════════════════════
 
     suspend fun unregister(sessionId: String, reason: String = "USER_ENDED") {
         val session = sessions[sessionId] ?: return
@@ -64,17 +66,15 @@ object SessionRegistry {
         val sessionId = tokenHashIndex[tokenHash] ?: return null
         val session = sessions[sessionId] ?: return null
 
-        // Expiration check
         if (session.isExpired()) return null
 
-        // Add client to session
         session.clientSockets[clientId] = clientSocket
         return session
     }
 
-    // ═════════════════════════════════════════════
-    //  FORWARD — Forwards front requests to the app
-    // ═════════════════════════════════════════════
+    // ═══════════════════════════════════════════
+    //  FORWARD — Forwards request to app
+    // ═══════════════════════════════════════════
 
     fun getAppSocket(tokenHash: String): WebSocketSession? {
         val sessionId = tokenHashIndex[tokenHash] ?: return null
@@ -83,18 +83,18 @@ object SessionRegistry {
         return session.appSocket
     }
 
-    // ═══════════════════════════════════════════════
-    //  RESPONSE — Forwards apps response to the front
-    // ═══════════════════════════════════════════════
+    // ═══════════════════════════════════════════
+    //  RESPONSE — Forwards response to front
+    // ═══════════════════════════════════════════
 
     fun getClientSocket(sessionId: String, clientId: String): WebSocketSession? {
         val session = sessions[sessionId] ?: return null
         return session.clientSockets[clientId]
     }
 
-    // ═════════════════════
-    //  Client disconnection
-    // ═════════════════════
+    // ═══════════════════════════════════════════
+    //  DISCONNECTION of client
+    // ═══════════════════════════════════════════
 
     fun removeClient(tokenHash: String, clientId: String) {
         val sessionId = tokenHashIndex[tokenHash] ?: return
@@ -102,16 +102,16 @@ object SessionRegistry {
         session.clientSockets.remove(clientId)
     }
 
-    // ══════════════════════════
-    //  Android app disconnection
-    // ══════════════════════════
+    // ═══════════════════════════════════════════
+    //  DISCONNECTION of android app
+    // ═══════════════════════════════════════════
 
     suspend fun onAppDisconnected(sessionId: String) {
         unregister(sessionId, "APP_DISCONNECTED")
     }
 
     // ═══════════════════════════════════════════
-    //  Expired sessions cleanup
+    //  CLEAN expired sessions
     // ═══════════════════════════════════════════
 
     suspend fun cleanupExpired() {
@@ -124,7 +124,7 @@ object SessionRegistry {
     }
 
     // ═══════════════════════════════════════════
-    //  UTILITAIRE — Notify client
+    //  UTILS Notify clients
     // ═══════════════════════════════════════════
 
     private suspend fun notifyClients(session: RelaySession, reason: String) {
@@ -136,9 +136,7 @@ object SessionRegistry {
             try {
                 socket.send(Frame.Text(message))
                 socket.close()
-            } catch (_: Exception) {
-                // Client déjà déconnecté, on ignore
-            }
+            } catch (_: java.io.IOException) {}
         }
     }
 

@@ -23,9 +23,9 @@ fun Route.appSocket() {
                     when (base.type) {
 
                         // ═══════════════════════════════════
-                        //  REGISTER — Créer une session
+                        //  REGISTER — Create a session
                         // ═══════════════════════════════════
-                        "REGISTER" -> {
+                        MessageType.REGISTER -> {
                             val msg = json.decodeFromString(RegisterMessage.serializer(), text)
 
                             val success = SessionRegistry.register(
@@ -44,18 +44,27 @@ fun Route.appSocket() {
                                 )
                                 send(Frame.Text(response))
                             } else {
-                                send(Frame.Text("""{"type":"ERROR","reason":"SESSION_ALREADY_EXISTS"}"""))
+                                val error = json.encodeToString(
+                                    BaseMessage.serializer(),
+                                    BaseMessage(type = MessageType.ERROR)
+                                )
+                                send(Frame.Text(error))
                                 close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Session already exists"))
                             }
                         }
 
                         // ═══════════════════════════════════
-                        //  RESPONSE — Réponse vers le front
+                        //  RESPONSE — Send response to front
                         // ═══════════════════════════════════
-                        "RESPONSE" -> {
-                            val msg = json.decodeFromString(AppResponseMessage.serializer(), text)
-                            val sessionId = registeredSessionId ?: continue
+                        MessageType.RESPONSE -> {
+                            val sessionId = registeredSessionId
+                            if (sessionId == null) {
+                                send(Frame.Text("""{"type":"ERROR","reason":"NOT_REGISTERED"}"""))
+                                close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Not registered"))
+                                continue
+                            }
 
+                            val msg = json.decodeFromString(AppResponseMessage.serializer(), text)
                             val clientSocket = SessionRegistry.getClientSocket(sessionId, msg.clientId)
                             if (clientSocket != null) {
                                 val response = json.encodeToString(
@@ -70,10 +79,16 @@ fun Route.appSocket() {
                         }
 
                         // ═══════════════════════════════════
-                        //  UNREGISTER — Fermer la session
+                        //  UNREGISTER — Close session
                         // ═══════════════════════════════════
-                        "UNREGISTER" -> {
-                            val sessionId = registeredSessionId ?: continue
+                        MessageType.UNREGISTER -> {
+                            val sessionId = registeredSessionId
+                            if (sessionId == null) {
+                                send(Frame.Text("""{"type":"ERROR","reason":"NOT_REGISTERED"}"""))
+                                close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Not registered"))
+                                continue
+                            }
+
                             SessionRegistry.unregister(sessionId, "USER_ENDED")
                             registeredSessionId = null
                             close(CloseReason(CloseReason.Codes.NORMAL, "Session ended"))
@@ -82,7 +97,6 @@ fun Route.appSocket() {
                 }
             }
         } finally {
-            // L'app s'est déconnectée (volontairement ou non)
             registeredSessionId?.let { sessionId ->
                 SessionRegistry.onAppDisconnected(sessionId)
             }

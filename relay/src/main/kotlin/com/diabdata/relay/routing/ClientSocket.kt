@@ -25,9 +25,9 @@ fun Route.clientSocket() {
                     when (base.type) {
 
                         // ═══════════════════════════════════
-                        //  AUTH — Se connecter à une session
+                        //  AUTH — Connect to a session
                         // ═══════════════════════════════════
-                        "AUTH" -> {
+                        MessageType.AUTH -> {
                             val msg = json.decodeFromString(AuthMessage.serializer(), text)
 
                             val session = SessionRegistry.authenticate(
@@ -54,13 +54,19 @@ fun Route.clientSocket() {
                         }
 
                         // ═══════════════════════════════════
-                        //  REQUEST — Demande vers l'app Android
+                        //  REQUEST — Request to android app
                         // ═══════════════════════════════════
-                        "REQUEST" -> {
-                            val tokenHash = authenticatedTokenHash ?: continue
-                            val msg = json.decodeFromString(RequestMessage.serializer(), text)
+                        MessageType.REQUEST -> {
+                            val tokenHash = authenticatedTokenHash
+                            if (tokenHash == null) {
+                                send(Frame.Text("""{"type":"ERROR","reason":"NOT_AUTHENTICATED"}"""))
+                                close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Not authenticated"))
+                                continue
+                            }
 
+                            val msg = json.decodeFromString(RequestMessage.serializer(), text)
                             val appSocket = SessionRegistry.getAppSocket(tokenHash)
+
                             if (appSocket != null) {
                                 val forward = json.encodeToString(
                                     ForwardMessage.serializer(),
@@ -71,13 +77,18 @@ fun Route.clientSocket() {
                                     )
                                 )
                                 appSocket.send(Frame.Text(forward))
+                            } else {
+                                val response = json.encodeToString(
+                                    SessionClosedMessage.serializer(),
+                                    SessionClosedMessage(reason = "APP_DISCONNECTED")
+                                )
+                                send(Frame.Text(response))
                             }
                         }
                     }
                 }
             }
         } finally {
-            // Le client s'est déconnecté
             authenticatedTokenHash?.let { tokenHash ->
                 SessionRegistry.removeClient(tokenHash, clientId)
             }

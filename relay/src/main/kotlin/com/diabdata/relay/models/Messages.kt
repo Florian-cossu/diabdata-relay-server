@@ -3,12 +3,30 @@ package com.diabdata.relay.models
 import kotlinx.serialization.Serializable
 
 // ═══════════════════════════════════════════
+//  CONSTANTES DE TYPES
+// ═══════════════════════════════════════════
+
+object MessageType {
+    const val REGISTER = "REGISTER"
+    const val REGISTER_OK = "REGISTER_OK"
+    const val UNREGISTER = "UNREGISTER"
+    const val AUTH = "AUTH"
+    const val AUTH_OK = "AUTH_OK"
+    const val AUTH_FAILED = "AUTH_FAILED"
+    const val REQUEST = "REQUEST"
+    const val FORWARD = "FORWARD"
+    const val RESPONSE = "RESPONSE"
+    const val SESSION_CLOSED = "SESSION_CLOSED"
+    const val ERROR = "ERROR"
+}
+
+// ═══════════════════════════════════════════
 //  ANDROID APP → RELAI
 // ═══════════════════════════════════════════
 
 @Serializable
 data class RegisterMessage(
-    val type: String = "REGISTER",
+    val type: String = MessageType.REGISTER,
     val sessionId: String,
     val tokenHash: String,
     val mode: String,
@@ -17,13 +35,13 @@ data class RegisterMessage(
 
 @Serializable
 data class UnregisterMessage(
-    val type: String = "UNREGISTER",
+    val type: String = MessageType.UNREGISTER,
     val sessionId: String
 )
 
 @Serializable
 data class AppResponseMessage(
-    val type: String = "RESPONSE",
+    val type: String = MessageType.RESPONSE,
     val requestId: String,
     val clientId: String,
     val payload: String
@@ -35,67 +53,67 @@ data class AppResponseMessage(
 
 @Serializable
 data class AuthMessage(
-    val type: String = "AUTH",
+    val type: String = MessageType.AUTH,
     val tokenHash: String
 )
 
 @Serializable
 data class RequestMessage(
-    val type: String = "REQUEST",
+    val type: String = MessageType.REQUEST,
     val requestId: String,
-    val payload: String       // blob chiffré en base64
+    val payload: String
 )
 
 // ═══════════════════════════════════════════
-//  RELAY → ANDROID APP
+//  RELAI → ANDROID APP
 // ═══════════════════════════════════════════
 
 @Serializable
 data class RegisterOkMessage(
-    val type: String = "REGISTER_OK",
+    val type: String = MessageType.REGISTER_OK,
     val sessionId: String
 )
 
 @Serializable
 data class ForwardMessage(
-    val type: String = "FORWARD",
+    val type: String = MessageType.FORWARD,
     val requestId: String,
     val clientId: String,
     val payload: String
 )
 
 // ═══════════════════════════════════════════
-//  RELAY → FRONT
+//  RELAI → FRONT
 // ═══════════════════════════════════════════
 
 @Serializable
 data class AuthOkMessage(
-    val type: String = "AUTH_OK",
+    val type: String = MessageType.AUTH_OK,
     val mode: String
 )
 
 @Serializable
 data class AuthFailedMessage(
-    val type: String = "AUTH_FAILED",
+    val type: String = MessageType.AUTH_FAILED,
     val reason: String
 )
 
 @Serializable
 data class ClientResponseMessage(
-    val type: String = "RESPONSE",
+    val type: String = MessageType.RESPONSE,
     val requestId: String,
     val payload: String
 )
 
 @Serializable
 data class SessionClosedMessage(
-    val type: String = "SESSION_CLOSED",
-    val reason: String        // "USER_ENDED", "SESSION_EXPIRED", "APP_DISCONNECTED"
+    val type: String = MessageType.SESSION_CLOSED,
+    val reason: String
 )
 
-// ═══════════════════════════
-//  UTILS — Parse message type
-// ═══════════════════════════
+// ═══════════════════════════════════════════
+//  UTILITAIRE
+// ═══════════════════════════════════════════
 
 @Serializable
 data class BaseMessage(
