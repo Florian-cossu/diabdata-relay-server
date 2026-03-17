@@ -12,6 +12,9 @@
 
 # Package Files #
 *.jar
+# Exception : le wrapper Gradle est nécessaire
+!gradle/wrapper/gradle-wrapper.jar
+
 *.war
 *.nar
 *.ear
