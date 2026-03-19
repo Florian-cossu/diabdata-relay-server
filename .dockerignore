@@ -1,6 +1,7 @@
 .git
-.gradle
+node_modules
 .idea
-build
-relay/build
-local.properties
+.vscode
+.DS_Store
+.env
+certbot
