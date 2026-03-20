@@ -61,7 +61,7 @@ class SessionRegistry {
     public authenticateClient ( tokenHash: string, clientId: string, clientSocket: ServerWebSocket<WsData> ) {
         let session = this.getSessionByTokenHash(tokenHash)
 
-        if (!session || this.isExpired(session.expiresAt)) return null
+        if (!session || this.isExpired(session.expiresAt)) return null
 
         session.clientSockets.set(clientId, clientSocket)
         return session
