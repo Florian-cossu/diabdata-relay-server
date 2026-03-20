@@ -1,47 +1,34 @@
-# Compiled class file
-*.class
+# ═══════════════════════════════════
+#  Dependencies
+# ═══════════════════════════════════
+node_modules/
 
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
-*.jar
-# Exception : le wrapper Gradle est nécessaire
-!gradle/wrapper/gradle-wrapper.jar
-
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-
-# virtual machine crash logs
-hs_err_pid*
-replay_pid*
-
-# Kotlin Gradle plugin data
-.kotlin/
+# ═══════════════════════════════════
+#  Build outputs
+# ═══════════════════════════════════
+dist/
+out/
 
 # ═══════════════════════════════════
 #  IDE & Local config
 # ═══════════════════════════════════
 .idea/
-local.properties
+.vscode/
+*.swp
+.DS_Store
 
 # ═══════════════════════════════════
-#  Build outputs
+#  Environment & secrets
 # ═══════════════════════════════════
-build/
-relay/build/
+.env
+.env.*
 
 # ═══════════════════════════════════
-#  Gradle
+#  Logs
 # ═══════════════════════════════════
-.gradle/
+*.log
+
+# ═══════════════════════════════════
+#  Certbot
+# ═══════════════════════════════════
+certbot/
