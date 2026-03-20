@@ -2,6 +2,7 @@ export const MessageType = {
     REGISTER: "REGISTER",
     REGISTER_OK: "REGISTER_OK",
     UNREGISTER: "UNREGISTER",
+    UNREGISTER_OK: "UNREGISTER_OK",
     AUTH: "AUTH",
     AUTH_OK: "AUTH_OK",
     AUTH_FAILED: "AUTH_FAILED",
@@ -28,6 +29,16 @@ export const SharingType = {
 } as const
 
 export type SharingMode = typeof SharingType[keyof typeof SharingType]
+
+export const ErrorType = {
+    SESSION_ALREADY_EXISTS: "SESSION_ALREADY_EXISTS",
+    SESSION_DOES_NOT_EXIST: "SESSION_DOES_NOT_EXIST",
+    SESSION_COULD_NOT_BE_TERMINATED: "SESSION_COULD_NOT_BE_TERMINATED",
+    SESSION_COULD_NOT_BE_CREATED: "SESSION_COULD_NOT_BE_CREATED",
+    MISSING_TOKEN_HASH: "MISSING_TOKEN_HASH"
+} as const
+
+export type ErrorTypes = typeof ErrorType[keyof typeof ErrorType]
 
 // ═══════════════════════════════════════════
 //  ANDROID APP → RELAY

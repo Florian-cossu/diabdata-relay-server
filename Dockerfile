@@ -1,14 +1,16 @@
-# ---- Build stage ----
-FROM gradle:8.14-jdk17 AS build
+# use the official Bun image
+# see all versions at https://hub.docker.com/r/oven/bun/tags
+FROM oven/bun:1
 WORKDIR /app
-COPY . .
-RUN gradle :relay:installDist --no-daemon
 
-# ---- Run stage ----
-FROM eclipse-temurin:17-jre
-WORKDIR /app
-COPY --from=build /app/relay/build/install/relay/ ./
+# Import package json and bun lock for dependancies
+COPY package.json bun.lock ./
+RUN bun install
+
+# Import code
+COPY src/ ./src/
 
 EXPOSE 8080
 
-ENTRYPOINT ["./bin/relay"]
+# run the app
+ENTRYPOINT ["bun", "run", "src/index.ts"]

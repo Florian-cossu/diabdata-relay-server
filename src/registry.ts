@@ -41,8 +41,8 @@ class SessionRegistry {
     //  UNREGISTER — Android app closes session
     // ═══════════════════════════════════════════
 
-    public unregister ( sessionId: string, reason: SessionInterruptionTypes = "USER_ENDED" ) {
-        if (!this.sessions.has(sessionId)) return
+    public unregister ( sessionId: string, reason: SessionInterruptionTypes = "USER_ENDED" ): boolean {
+        if (!this.sessions.has(sessionId)) return false
 
         let session: Session = this.sessions.get(sessionId)!
 
@@ -50,6 +50,8 @@ class SessionRegistry {
 
         this.tokenHashIndex.delete(session.tokenHash)
         this.sessions.delete(sessionId)
+
+        return true
     }
 
     // ═══════════════════════════════════════════
